@@ -1,0 +1,1217 @@
+---
+title: "Figures"
+output: html_document
+date: "2023-04-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries, set themes
+```{r}
+library(ggridges)
+library(ggplot2)
+library(patchwork)
+library(ggrepel)
+theme_HPA <- theme(panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank(),
+                   panel.spacing = unit(0.2, "lines"),
+                   panel.background=element_rect(fill="white"),
+                   panel.border = element_blank(),
+                   plot.title = element_text(face = "bold",
+                                             size = rel(1), hjust = 0.5),
+                   plot.subtitle=element_text(face = "bold",hjust = 0.5, size=rel(1),vjust=1),
+                   axis.title = element_text(face = "bold",size = rel(1)),
+                   axis.ticks = element_line(),
+                   axis.ticks.length = unit(.25, "cm"),
+                   axis.line = element_line(size = 0.5),
+                   axis.text = element_text(size = rel(1), color = 'black'),
+                   legend.key = element_blank(),
+                   legend.position = "right",
+                   legend.text = element_text(size=rel(0.8)),
+                   legend.key.size= unit(0.7, "cm"),
+                   legend.title = element_text(size=rel(1)),
+                   plot.margin=unit(c(10,5,5,5),"mm"),
+                   strip.background=element_rect(colour="grey90",fill="grey90"),
+                   strip.text = element_text(face="bold"))
+
+group_pal <-
+  c("AML" = "#A6CEE3",
+    "CLL" = "#2271B5",
+    "LYMPH" = "#08585A",
+    "MYEL" = "#66C2A5",
+    "CRC" = "#B89B74",
+    "LUNGC" = "#ADC74F",
+    "GLIOM" = "#FFD321",
+    "BRC" = "#E8A29A",
+    "CVX" =  "#9E0142",
+    "ENDC" = "#B195AE",
+    "OVC" = "#603479",
+    "PRC" = "#E7662B",
+    "PAN" = "#99FFFF",
+    "HCC" = "#4f9f64",
+    "Healthy" = "#CCCCCC")
+
+group_pal2 <-
+  c("AML" = "#A6CEE3",
+    "CLL" = "#2271B5",
+    "LYMPH" = "#08585A",
+    "MYEL" = "#66C2A5",
+    "CRC" = "#B89B74",
+    "LUNGC" = "#ADC74F",
+    "GLIOM" = "#FFD321",
+    "BRC" = "#E8A29A",
+    "CVX" =  "#9E0142",
+    "ENDC" = "#B195AE",
+    "OVC" = "#603479",
+    "PRC" = "#E7662B",
+    "PAN" = "#99FFFF",
+    "HCC" = "#4f9f64")
+ c('AML','CLL','LYMPH','MYEL','CRC','LUNGC','GLIOM','BRC', 'CVX','ENDC','OVC','PRC')
+
+group_fem_pal <-
+  c("AML" = "#A6CEE3",
+    "CLL" = "#2271B5",
+    "LYMPH" = "#08585A",
+    "MYEL" = "#66C2A5",
+    "CRC" = "#B89B74",
+    "LUNGC" = "#ADC74F",
+    "GLIOM" = "#FFD321",
+    "BRC" = "#E8A29A",
+    "CVX" =  "#E8A29A",
+    "ENDC" = "#E8A29A",
+    "OVC" = "#E8A29A",
+    "PRC" = "#E7662B",
+    "PAN" = "#99FFFF",
+    "HCC" = "#4f9f64",
+    "Healthy" = "#CCCCCC")
+
+names_pal <- 
+  c("AML" = "#A6CEE3",
+    "CLL" = "#2271B5",
+    "DLBCL"= "#08585A",
+    "Myeloma"= "#66C2A5",
+    "Lung"= "#ADC74F",
+    "Colorectal"= "#B89B74",
+    "Glioma"= "#FFD321",
+    "Prostate"= "#E7662B",
+     "Breast"= "#E8A29A",
+    "Cervical"=  "#9E0142",
+    "Endometrial"= "#B195AE",
+     "Ovarian"= "#603479",
+    "Pancreatic"= "#99FFFF",
+    "Hepatocellular"= "#4f9f64",
+     "Healthy"= "#CCCCCC")
+
+cancers_14_mapping <-
+  data.frame(Disease = c('AML','CLL','LYMPH','MYEL','LUNGC','CRC','GLIOM',
+                       'PRC','BRC','CVX','ENDC','OVC','PAN','HCC','Healthy'),
+             Cancer = c("AML",
+                        "CLL",
+                        "DLBCL",
+                        "Myeloma",
+                        "Lung",
+                        "Colorectal",
+                        "Glioma",
+                        "Prostate",
+                        "Breast",
+                        "Cervical",
+                        "Endometrial",
+                        "Ovarian",
+                        "Pancreatic",
+                        "Hepatocellular",
+                        "Healthy"))
+
+```
+## Figure 1
+```{r}
+
+p1A_H <- final_filt_combined_0505 %>% 
+  filter(Age>0) %>% 
+  left_join(cancers_14_mapping) %>%
+  mutate(Cancer = factor(Cancer, levels=cancers_14_mapping$Cancer)) %>% 
+  ggplot(aes(Age,Cancer,fill=Cancer))+
+  geom_density_ridges(alpha = 0.9,
+                      scale = 0.9,
+                      show.legend = F,
+                      linewidth = 0.5,
+                      color = "black",
+                      quantile_lines=TRUE,
+                      quantile_fun=function(x,...)mean(x)) +
+  scale_fill_manual(values = names_pal)+
+  theme_HPA
+
+p1A_C <- filt_cancer %>% 
+  filter(Age>0) %>% 
+  left_join(cancers_14_mapping) %>%
+  mutate(Cancer = factor(Cancer, levels=cancers_14_mapping$Cancer)) %>% 
+  ggplot(aes(Age,Cancer,fill=Cancer))+
+  geom_density_ridges(alpha = 0.9,
+                      scale = 0.9,
+                      show.legend = F,
+                      linewidth = 0.5,
+                      color = "black",
+                      quantile_lines=TRUE,
+                      quantile_fun=function(x,...)mean(x)) +
+  scale_fill_manual(values = names_pal)+
+  theme_HPA
+
+```
+## Fig 1 sex barplot
+```{r}
+
+p1b_H <- filt_cancer_final_0505 %>% 
+  left_join(cancers_14_mapping) %>%
+  mutate(Cancer = factor(Cancer, levels=cancers_14_mapping$Cancer)) %>% 
+  select(Cancer,Sex,DAid) %>% 
+  group_by(Cancer,Sex) %>% 
+  summarise(n = n_distinct(DAid)) %>%
+  drop_na() %>% 
+  ggplot(aes(Cancer, n, fill = Sex, group = Sex)) +
+  geom_bar(stat = "identity", width = 0.5, alpha = 0.7,color = "black") +
+  coord_flip() +
+  theme_HPA +
+  #theme(axis.line.y = element_blank(),
+  #      axis.text.y = element_blank(),
+  #      axis.ticks.y = element_blank(),
+  #      axis.title.y = element_blank())+
+  ylab("Number of samples") 
+
+p1b_C <- filt_cancer %>% 
+  left_join(cancers_14_mapping) %>%
+  mutate(Cancer = factor(Cancer, levels=cancers_14_mapping$Cancer)) %>% 
+  select(Cancer,Sex,DAid) %>% 
+  group_by(Cancer,Sex) %>% 
+  summarise(n = n_distinct(DAid)) %>%
+  drop_na() %>% 
+  ggplot(aes(Cancer, n, fill = Sex, group = Sex)) +
+  geom_bar(stat = "identity", width = 0.5, alpha = 0.7,color = "black") +
+  coord_flip() +
+  theme_HPA +
+  theme(axis.line.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank())+
+       #legend.position = "top")+
+  ylab("Number of samples") 
+
+'theme(axis.line.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "top")'
+```
+
+```{r}
+pdf('figures/fig1_healthy.pdf',width=10)
+p1A+p1b_H
+dev.off()
+
+pdf('figures/fig1_canxcer.pdf',width=10)
+p1A_C+p1b_C
+dev.off()
+
+```
+
+
+## boxplots
+```{r}
+plot_top_prots_ML <- function(top_prots,cancer){
+  filt_combined %>% 
+    mutate(Groups = case_when(Disease == as.character(cancer) ~ as.character(cancer),
+                              Disease == 'Healthy' ~ 'Healthy',
+                              Disease %in% c("AML","CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","PAN") ~ 'All Cancer')) %>% 
+    #filter(!Assay %in% c('LTA4H','GDF15','PMVK','CTSC')) %>% 
+    filter(Assay %in% top_prots$term) %>% 
+    mutate(Assay = factor(Assay, levels = top_prots$term)) %>% 
+    mutate(Disease = factor(Disease, levels = c(cancer_levels, "Healthy"))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle(paste(cancer),'(ML)')
+}
+pdf('plots/0426/HCC_top10_ML.pdf',width = 14)
+plot_top_prots_ML(top_10_ML_HCC,'HCC')
+dev.off()
+pdf('plots/0426/PAN_top10_ML.pdf',width = 14)
+plot_top_prots_ML(top_10_ML_PAN,'PAN')
+dev.off()
+```
+
+## DE volcano & boxplots
+```{r}
+DE_plot_volcano <- function(limma_res,cancer){
+  limma_res$DE_results %>% 
+    mutate(color = if_else(adj.P.Val > 0.05, "gray", if_else(adj.P.Val < 0.05 & logFC < 0, "red", "blue"))) %>%
+    mutate(sig = adj.P.Val < 1e-5, label = if_else(sig, rownames(limma_res$DE_results), "")) %>% 
+    ggplot(aes(x = logFC, y = -log10(adj.P.Val), color = color)) +
+    geom_point(alpha = 0.5) +
+    ggtitle(cancer) +
+    scale_color_manual(values = c("red", "gray", "blue")) +
+    geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+    geom_vline(xintercept = 0, linetype = "dashed") +
+    geom_text_repel(aes(label = label), size = 3)+
+    theme_HPA +
+    theme(legend.position ="none", plot.subtitle = element_text(size = 10, face = "italic"))
+}
+
+plot_top_prots_DE <- function(limma_res,cancer){
+  filt_combined %>% 
+    mutate(Groups = case_when(Disease == as.character(cancer) ~ as.character(cancer),
+                              Disease == 'Healthy' ~ 'Healthy',
+                              Disease %in% c("AML","CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer')) %>% 
+    filter(Assay %in% rownames(limma_res$top_10_prots)) %>% 
+    mutate(Assay = factor(Assay, levels = rownames(limma_res$top_10_prots))) %>% 
+    mutate(Disease = factor(Disease, levels = c(cancer_levels, "Healthy"))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle(paste(cancer),'(DE)')
+}
+
+```
+
+## Fig 2 - HCC & PAN vs IGT
+```{r,echo=FALSE}
+#pdf('plots/0426//PAN_volcano_vs_IGT.pdf',width = 14)
+pan_vs_IGT_volc <- DE_plot_volcano(PAN_IGT_Limma_0427,'PAN') + ggtitle('Pancreatic Cancer')
+#dev.off()
+
+#pdf('plots/0426/HCC_volcano_vs_IGT.pdf',width = 14)
+hcc_vs_IGT_volc <- DE_plot_volcano(HCC_IGT_Limma_0427,'HCC')+ ggtitle('Hepatocellular Carcinoma')
+#dev.off()
+
+#pdf('plots/0426//PAN_vs_IGT_DE_top_prots.pdf',width = 14)
+p2b <- plot_top_prots_DE(PAN_IGT_Limma_0427,'PAN')+ ggtitle('Pancreatic Cancer')
+#dev.off()
+
+#pdf('plots/0426/HCC_vs_IGT_DE_top_prots.pdf',width = 14)+ ggtitle('Hepatocellular Carcinoma')
+p2d <- plot_top_prots_DE(HCC_cancer_Limma_0427,'HCC')+ ggtitle('Hepatocellular Carcinoma')
+#dev.off()
+
+de_prots_hcc_vsIGT <- 
+  filt_combined %>% 
+    filter(Disease %in% c('HCC','Healthy')) %>% 
+    mutate(Groups = case_when(Disease == 'HCC' ~ 'Hepatocellular Carcinoma',
+                              Disease == 'Healthy' ~ 'Healthy')) %>% 
+    #                          Disease %in% #c("AML","CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer')) %>% 
+    filter(Assay %in% rownames(HCC_IGT_Limma_0427$top_10_prots)) %>% 
+    mutate(Assay = factor(Assay, levels = rownames(HCC_IGT_Limma_0427$top_10_prots))) %>% 
+    mutate(Disease = factor(Disease, levels = c('Hepatocellular Carcinoma', "Healthy"))) %>% 
+    ggplot(aes(Groups,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +
+    #theme(axis.text.x = element_text(angle = 90))+
+    theme(axis.text.x = element_blank())+
+    theme_HPA+
+    ggtitle('Hepatocellular Carcinoma')
+
+de_prots_pan_vsIGT <- 
+  filt_combined %>% 
+    filter(Disease %in% c('PAN','Healthy')) %>% 
+    mutate(Groups = case_when(Disease == 'PAN' ~ 'Pancreatic Cancer',
+                              #Disease == 'Healthy' ~ 'Healthy')) %>% 
+                              Disease %in% c("AML","CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer')) %>% 
+    filter(Assay %in% rownames(PAN_IGT_Limma_0427$top_10_prots)) %>% 
+    mutate(Assay = factor(Assay, levels = rownames(PAN_IGT_Limma_0427$top_10_prots))) %>% 
+    mutate(Disease = factor(Disease, levels = c('Pancreatic Cancer', "Healthy"))) %>% 
+    ggplot(aes(Groups,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +
+    theme(axis.text.x = element_blank())+
+    #theme(axis.text.x = element_text(angle = 45))+
+    theme_HPA+
+    ggtitle('Pancreatic Cancer')
+
+de_prots_pan_vscancer <- 
+  filt_cancer_final_0505 %>% 
+    mutate(Groups = case_when(Disease == 'PAN' ~ 'Pancreatic Cancer',
+                              Disease %in% c("AML","CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer')) %>% 
+    filter(Assay %in% rownames(PAN_cancer_Limma_0427$top_10_prots)) %>% 
+    mutate(Assay = factor(Assay, levels = rownames(PAN_cancer_Limma_0427$top_10_prots))) %>% 
+   # mutate(Disease = factor(Disease, levels = c('Pancreatic Cancer', "Healthy"))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +
+    theme(axis.text.x = element_blank())+
+    theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle('Pancreatic Cancer')
+
+de_prots_hcc_vscancer <- 
+  filt_cancer_final_0505 %>% 
+    mutate(Groups = case_when(Disease == 'HCC' ~ 'Hepatocellular Carcinoma',
+                              Disease %in% c("AML","CLL","LYMPH","MYEL","CRC",'PAN',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer')) %>% 
+    filter(Assay %in% rownames(HCC_cancer_Limma_0427$top_10_prots)) %>% 
+    mutate(Assay = factor(Assay, levels = rownames(HCC_cancer_Limma_0427$top_10_prots))) %>% 
+   # mutate(Disease = factor(Disease, levels = c('Pancreatic Cancer', "Healthy"))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +
+    theme(axis.text.x = element_blank())+
+    theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle('Hepatocellular Carcinoma')
+
+
+pdf('figures/limmma_vs_igt.pdf',width = 16,height = 14)
+(hcc_vs_IGT_volc + de_prots_hcc_vsIGT) / (pan_vs_IGT_volc + de_prots_pan_vsIGT)
+dev.off()
+
+pdf('figures/limma_vs_cancer.pdf',width = 16,height = 20)
+(hcc_vs_cancer_volc + pan_vs_cancer_volc) /  (de_prots_hcc_vscancer / de_prots_pan_vscancer)
+dev.off()
+```
+## HCC & PAN vs cancers
+```{r}
+
+pdf('plots/0426//PAN_vs_cancer_DE_top_prots.pdf',width = 14)
+p2c <- plot_top_prots_DE(PAN_cancer_Limma_0427,'PAN')
+dev.off()
+
+pdf('plots/0426/HCC_vs_cancer_DE_top_prots.pdf',width = 14)
+p2a <- plot_top_prots_DE(HCC_vs_cancer_limma,'HCC')
+dev.off()
+
+pdf('plots/0426/PAN_volcano_vs_cancer.pdf',width = 14)
+p2b <- DE_plot_volcano(PAN_cancer_Limma_0427,'PAN')
+dev.off()
+
+pdf('plots/0426/HCC_volcano_vs_cancer.pdf',width = 14)
+DE_plot_volcano(HCC_vs_cancer_limma,'HCC')
+dev.off()
+```
+## HCC vs other liver diseases
+```{r}
+pdf('plots/0426/HCC_liver_top_10_DE_allgroups.pdf',width = 18)
+
+wo_class_filt_cancer <- filt_cancer %>% 
+  select(-Class)
+filt_liver_plus_cancer <- rbind(wo_class_filt_cancer,filt_liver)
+
+
+filt_liver_plus_cancer %>% 
+    filter(Disease %in% can_liv_levels) %>% 
+    mutate(Groups = case_when(Disease == as.character(cancer) ~ as.character(cancer),
+                              Disease == 'Healthy' ~ 'Healthy',
+                              Disease %in% c("AML","CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer',
+                              Disease == "Viral hepatitis related cirrhosis" ~ "Viral hepatitis related cirrhosis",
+                              Disease == "Chronic Liver Disease (CLD)" ~ 'Chronic Liver Disease',
+                              Disease == 'Liver healthy' ~ 'Liver healthy',
+                              Disease == 'Fatty Liver Disease' ~ 'Fatty Liver Disease')) %>% 
+    filter(Assay %in% rownames(liver_top_10_sig)) %>% 
+    mutate(Assay = factor(Assay, levels = rownames(liver_top_10_sig))) %>% 
+    mutate(Disease = factor(Disease, levels = c(can_liv_levels, "Healthy"))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle('HCC vs liver disease (DE)')
+dev.off()
+
+pdf('plots/0426/HCC_liver_top_10_DE.pdf',width = 14)
+filt_liver_combined %>% 
+    filter(Disease %in% c('HCC',liver_levels)) %>% 
+    mutate(Groups = case_when(Disease == as.character(cancer) ~ 'HCC',
+                               Disease == "Viral hepatitis related cirrhosis" ~ "Viral hepatitis related cirrhosis",
+                              Disease == "Chronic Liver Disease (CLD)" ~ 'Chronic Liver Disease',
+                              Disease == 'Liver healthy' ~ 'Liver healthy',
+                              Disease == 'Fatty Liver Disease' ~ 'Fatty Liver Disease')) %>% 
+    filter(Assay %in% rownames(liver_top_10_sig)) %>% 
+    mutate(Assay = factor(Assay, levels = rownames(liver_top_10_sig))) %>% 
+    mutate(Disease = factor(Disease, levels = c('HCC',liver_levels))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle('HCC vs liver disease (DE)')
+dev.off()
+```
+## Fig 3 - ROC curves 
+```{r}
+roc_mapping <-  data.frame(.level = c('AML','CLL','LYMPH','MYEL','LUNGC','CRC','GLIOM',
+                       'PRC','BRC','CVX','ENDC','OVC','PAN','HCC'),
+             Cancer = c("AML",
+                        "CLL",
+                        "DLBCL",
+                        "Myeloma",
+                        "Lung",
+                        "Colorectal",
+                        "Glioma",
+                        "Prostate",
+                        "Breast",
+                        "Cervical",
+                        "Endometrial",
+                        "Ovarian",
+                        "Pancreatic",
+                        "Hepatocellular"))
+
+fig_Roc <- multiclass$roc_res %>% 
+  left_join(roc_mapping) %>% 
+  mutate(Cancer = as.factor(Cancer)) %>% 
+  ggplot(aes(x=1-specificity,y=sensitivity)) +
+  geom_path() +
+  facet_wrap('Cancer')+
+  geom_segment(aes(x = 0, y = 0, xend = 1, yend = 1), 
+               colour='grey',linetype='dotdash')+
+  #annotate('text', x = 0.75, y = 0.25, label = paste("AUC",round(brc_res$roc_auc$.estimate,3),sep = ': ')) +
+  coord_fixed(ratio = 1)+
+  theme_HPA
+
+pdf('figures/fig3_roc.pdf',width=18, height = 18)
+fig_Roc
+dev.off()
+
+left_join(cancers_14_mapping) %>%
+  mutate(Cancer = factor(Cancer, levels=cancers_14_mapping$Cancer)) %>% 
+
+ggplot(multiclass$roc_res,aes(x=1-specificity,y=sensitivity)) +
+  geom_path() +
+  geom_segment(aes(x = 0, y = 0, xend = 1, yend = 1), 
+               colour='grey', linetype = 'dotdash') +
+  annotate('text', x = 0.75, y = 0.25, label = paste("AUC",round(brc_res$roc_auc$.estimate,3),sep = ': ')) +
+  theme_bw() + 
+  coord_fixed(ratio = 1)+
+  ggtitle('Breast')
+
+
+
+
+```
+
+## Fig 4 - PROTEIN IMP SUMMARY
+```{r}
+##below code works ##
+ML_all_top_prots %>% 
+  group_by(Cancer) %>%
+  filter(scaled>0) %>% 
+  top_n(7,scaled) %>% 
+  #ungroup() %>% 
+  #distinct(term)
+  mutate(term_Cancer = paste(Cancer, term, sep = "_")) %>% 
+  mutate(term_Cancer = factor(term_Cancer, levels = rev(.$term_Cancer))) %>% 
+  ggplot(aes(term_Cancer, scaled, color = term_Cancer)) +
+  geom_segment( aes(x = term_Cancer, xend =  term_Cancer, y = 0, yend = scaled), show.legend = F) +
+  geom_point(size = 2, alpha = 0.8, show.legend = F) +
+  facet_wrap(~Cancer, scales = "free_y",  ncol = 1) + 
+  #scale_color_manual(values = palettes$alt_group) +
+  theme_HPA +
+  coord_flip() +
+  theme(axis.text = element_text(size = 6)) +
+  xlab("Rank") +
+  ylab("Protein importance")
+
+## plot top 7 ##
+p3b <- ML_all_top_prots %>% 
+  group_by(Cancer) %>%
+  filter(scaled>0) %>% 
+  top_n(7,scaled) %>% 
+  mutate(term_Cancer = paste(Cancer, term, sep = "_")) %>% 
+  mutate(term_Cancer = factor(term_Cancer, levels = rev(.$term_Cancer))) %>% 
+  ggplot(aes(term_Cancer, scaled, color = term_Cancer)) +
+  geom_segment( aes(x = term_Cancer, xend =  term_Cancer, y = 0, yend = scaled), show.legend = F) +
+  geom_point(size = 2, alpha = 0.8, show.legend = F) +
+  facet_wrap(~Cancer, scales = "free_y",  ncol = 2) + 
+  scale_fill_manual(values = group_pal2) +
+  theme_HPA +
+  coord_flip() +
+  theme(axis.text = element_text(size = 6)) +
+  #theme(axis.text.y = ML_all_top_prots$term,
+  #    axis.ticks.y = element_blank())+
+  xlab("Rank") +
+  ylab("Protein importance") 
+
+
+## plot all ## 
+
+ML_all_top_prots  %>% 
+  complete(Cancer,fill = list(frequency=0)) 
+library(dplyr)
+library(tidyr)
+df %>% 
+    complete(gene, time = 1:4, fill = list(frequency = 0)) %>%
+    select(names(df))
+  # fill in 0s for 
+  
+  
+  
+p3a <- ML_all_top_prots %>% 
+  group_by(Cancer) %>%
+  filter(scaled>0) %>% 
+  mutate(term_Cancer = paste(Cancer, term, sep = "_")) %>% 
+  mutate(term_Cancer = factor(term_Cancer, levels = rev(.$term_Cancer))) %>% 
+  ggplot(aes(term_Cancer, scaled, color = term_Cancer)) +
+  geom_segment( aes(x = term_Cancer, xend =  term_Cancer, y = 0, yend = scaled), show.legend = F) +
+  geom_point(size = 2, alpha = 0.8, show.legend = F) +
+  facet_wrap(~Cancer, scales = "free_y",  ncol = 2) + 
+  scale_fill_manual(values = group_pal2) +
+  theme_HPA +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())+
+  coord_flip() +
+  xlab("Rank") +
+  ylab("Protein importance") 
+
+## test without cancer names
+## plot top 7 ##
+ptest <- ML_all_top_prots %>% 
+  group_by(Cancer) %>%
+  filter(scaled>0) %>% 
+  top_n(7,scaled) %>% 
+  #mutate(term_Cancer = paste(Cancer, term, sep = "_")) %>% 
+  #mutate(term_Cancer = factor(term_Cancer, levels = rev(.$term_Cancer))) %>% 
+  mutate(term = factor(term, levels = rev(.$term))) %>% 
+  ggplot(aes(term, scaled, color = term)) +
+  geom_segment( aes(x = term, xend =  term, y = 0, yend = scaled), show.legend = F) +
+  geom_point(size = 2, alpha = 0.8, show.legend = F) +
+  facet_wrap(~Cancer, scales = "free_y",  ncol = 2) + 
+  #scale_fill_manual(values = group_pal2) +
+  theme_HPA +
+  coord_flip() +
+  theme(axis.text = element_text(size = 6)) +
+  #theme(axis.text.y = ML_all_top_prots$term,
+  #    axis.ticks.y = element_blank())+
+  xlab("Rank") +
+  ylab("Protein importance")
+
+So what I did is I included always the top X (in my case 500 because the highest number was 473), even if the cancer had less, and they were just 0 in the plot
+
+
+roc_auc(multiclass$multiclass_res,truth = Disease, ... = .pred_AML:.pred_PRC,estimator = "macro_weighted")
+```
+
+## Get iindiv AUCs
+```{r}
+
+hpc_cv %>%
+  filter(Resample == "Fold01") %>%
+  select(obs, VF:L) %>% 
+  pivot_longer(-obs, names_to = 'class', values_to = 'prob') %>% 
+  group_nest(class) %>% 
+  mutate(
+    auc = map2_dbl(class, data, function(x, y) {
+      obs <- factor(y$obs == x)
+      est <- y$prob
+      roc_auc_vec(obs, est, event_level = 'second')
+    })
+  )
+
+multiclass$multiclass_res %>% 
+  select(Disease,.pred_AML:.pred_PRC) %>% 
+  pivot_longer(-Disease,names_to = 'class',values_to = 'prob') %>% 
+  group_nest(class) %>% 
+  mutate(
+    auc = map2_dbl(class,data,function(x,y){
+    obs <- factor(y$obs==x)
+    est <- y$prob
+    roc_auc_vec(obs,est,event_level='second')
+    })
+  )
+https://community.rstudio.com/t/aroc-for-classes-in-multi-class-models/132399
+
+library(purrr)
+library(tidyr)
+library(dplyr)
+library(yardstick)
+
+# Extract predicted probabilities and actual labels from the model object
+predictions <- multiclass$multiclass_res %>%
+  #as_tibble() %>%
+  pivot_longer(cols = .pred_AML:.pred_PRC, 
+               names_to = "class", 
+               values_to = "predicted_prob") 
+
+# Split the data by group and calculate AUC for each group
+grouped_aucs <- predictions %>%
+  group_split(group_var) %>%
+  map(~auc(.x$actual, .x$predicted_prob))
+
+# Combine the AUCs into a single data frame
+auc_df <- tibble(group_var = unique(predictions$group_var),
+                 auc = unlist(grouped_aucs))
+
+# View the AUCs
+auc_df
+
+multiclass_auc <- multiclass_roc(predictions_long, truth = disease, 
+                                  pred = predicted_class, class = "all")
+
+# Extract the AUCs for each cancer
+cancer_aucs <- multiclass_auc$roc_auc %>%
+  as_tibble() %>%
+  mutate(cancer = names(multiclass_auc$roc_auc))
+
+
+#Pivot the data frame to long format
+predictions_long <- multiclass$multiclass_res %>%
+  pivot_longer(cols = .pred_AML:.pred_PRC, 
+               names_to = "class", 
+               values_to = "predicted_prob")
+
+# Obtain the predicted class using the multi_class_predict() function
+predictions_long <- multi_class_predict(predictions_long)
+
+# Compute the AUC for each cancer
+cancer_aucs <- predictions_long %>%
+  group_by(class) %>%
+  summarize(auc = roc_auc(truth = Disease, 
+                          .pred = predicted_prob, 
+                          method = "multi_class"))
+
+# View the AUCs for each cancer
+cancer_aucs
+```
+
+## Fig 5 - protein imp vs DE score 
+```{r}
+
+
+PAN_padj_imp_scores <- left_join(ML_top_prots_PAN,PAN_IGT_Limma_0427$sig_genes,by='term')
+
+HCC_padj_imp_scores <- left_join(ML_top_prots_HCC,HCC_IGT_Limma_0427$sig_genes,by='term')
+
+p4a <- ggplot(HCC_padj_imp_scores,aes(-log10(adj.P.Val),scaled,label=term))+
+  geom_point(alpha=0.8) +
+  geom_text_repel(size=3)+
+  geom_vline(xintercept = -log10(0.05),linetype = 'dashed',color = 'orange')+
+  theme_HPA +
+  ggtitle('Hepatocellular Carcinoma')+
+  ylab('Protein Importance')+
+  xlab('-log10 Adjusted P-Value')
+
+
+p4b <- ggplot(PAN_padj_imp_scores,aes(-log10(adj.P.Val),scaled,label=term))+
+  geom_point(alpha=0.8) +
+  geom_text_repel(size=3)+
+  geom_vline(xintercept = -log10(0.05),linetype = 'dashed',color = 'orange')+
+  theme_HPA +
+  ggtitle('Pancreatic Cancer')+
+  ylab('Protein Importance')+
+  xlab('-log10 Adjusted P-Value')
+
+pdf("figures/fig5.pdf", width = 15, height = 8)
+(p4a + p4b)
+dev.off()
+```
+## Fig 6 - pancreatic staging
+```{r}
+pan_early_prots <- c('CSF1','SMOC1','HGF','PTN','SPINK1','CKAP4')
+
+pan_Stage_info_withM
+pan_samples <- filter(filt_cancer,Disease=='PAN')
+pan_all_stages <- left_join(pan_samples,pan_Stage_info_withM,by='DAid') %>% 
+  select(-barcode,-gender,-T,-N,-M)
+
+pan_IGT_stage_combined <- rbind(pan_all_stages,filt_IGT_stage)
+p6 <-  pan_IGT_stage_combined %>% 
+    filter(Stage == c('Early','Healthy','Late')) %>% 
+    mutate(Groups = case_when(Stage == 'Early'~'Early',
+                              Stage == 'Healthy' ~ 'Healthy',
+                              Stage == 'Late' ~ 'Late')) %>% 
+    filter(Assay %in% pan_early_prots) %>% 
+    mutate(Assay = factor(Assay, levels = pan_early_prots)) %>% 
+    mutate(Stage = factor(Stage, levels = c("Healthy",'Early','Late'))) %>% 
+    ggplot(aes(Stage,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle('DE pan stage - PAN vs IGT')
+
+ saveRDS(pan_all_stages,'rds_files/pan_all_stages.rds')
+
+### missing Stage values  
+filter(pan_IGT_stage_combined,Stage == 'missing') %>% 
++ distinct(DAid)
+# A tibble: 3 × 1
+#  DAid   
+#  <chr>  
+#1 DA08943
+#2 DA08948
+#3 DA08937
+```
+
+## Venn diagram 
+```{r}
+# Load library
+library(VennDiagram)
+marker_hcc <- readxl::read_xlsx("../markers_hcc.xlsx")
+marker_pan <- readxl::read_xlsx("../markers_pan.xlsx")
+
+# Generate 3 sets of 200 words
+set1 <- paste(rep("word_" , 200) , sample(c(1:1000) , 200 , replace=F) , sep="")
+set2 <- paste(rep("word_" , 200) , sample(c(1:1000) , 200 , replace=F) , sep="")
+set3 <- paste(rep("word_" , 200) , sample(c(1:1000) , 200 , replace=F) , sep="")
+ 
+hcc_setML <- filter(marker_hcc,GLM != 'No') %>% 
+  select(Gene)
+hcc_setDE_IGT <- filter(marker_hcc,DE_iGT != 'No') %>% 
+  select(Gene)
+hcc_setDE_CANCER <- filter(marker_hcc,DE_cancer != 'No') %>% 
+  select(Gene)
+
+pan_setML <- filter(marker_pan,GLM != 'No') %>% 
+  select(Gene)
+pan_setDE_IGT <- filter(marker_pan,DE_iGT != 'No') %>% 
+  select(Gene)
+pan_setDE_CANCER <- filter(marker_pan,DE_cancer != 'No') %>% 
+  select(Gene)
+
+x <- list(hcc_setML$Gene, hcc_setDE_CANCER$Gene, hcc_setDE_IGT$Gene)
+
+
+# Chart
+venn.diagram(
+  x = list(hcc_setML$Gene, hcc_setDE_CANCER$Gene, hcc_setDE_IGT$Gene),
+  category.names = c("hcc_setML" , "hcc_setDE_CANCER " , "hcc_setDE_IGT"),
+  filename = '#HCC_venn_diagramm.png',
+  output=TRUE
+)
+
+# Prepare a palette of 3 colors with R colorbrewer:
+library(RColorBrewer)
+myCol <- brewer.pal(3, "Pastel2")
+
+# Chart
+venn.diagram(
+        x = list(hcc_setML$Gene, hcc_setDE_CANCER$Gene, hcc_setDE_IGT$Gene),
+        category.names = c("GLMnet" , "DE - Healthy" , "DE - Cancer"),
+        filename = 'HCC_venn_diagramm.png',
+        output=TRUE,
+        
+        # Output features
+        imagetype="png" ,
+        height = 480 , 
+        width = 480 , 
+        resolution = 300,
+        compression = "lzw",
+        
+        # Circles
+        lwd = 1,
+        lty = 'blank',
+        fill = myCol,
+        
+        # Numbers
+        cex = .4,
+        fontface = "bold",
+        fontfamily = "sans",
+        
+        # Set names
+        cat.cex = 0.4,
+        cat.fontface = "bold",
+        cat.default.pos = "outer",
+        cat.pos = c(-27, 27, 135),
+        cat.dist = c(0.055, 0.055, 0.085),
+        cat.fontfamily = "sans",
+        rotation = 1
+)
+
+venn.diagram(
+        x = list(pan_setML$Gene, pan_setDE_CANCER$Gene, pan_setDE_IGT$Gene),
+        category.names = c("GLMnet" , "DE - Healthy" , "DE - Cancer"),
+        filename = 'PAN_venn_diagramm.png',
+        output=TRUE,
+        
+        # Output features
+        imagetype="png" ,
+        height = 480 , 
+        width = 480 , 
+        resolution = 300,
+        compression = "lzw",
+        
+        # Circles
+        lwd = 1,
+        lty = 'blank',
+        fill = myCol,
+        
+        # Numbers
+        cex = .4,
+        fontface = "bold",
+        fontfamily = "sans",
+        
+        # Set names
+        cat.cex = 0.4,
+        cat.fontface = "bold",
+        cat.default.pos = "outer",
+        cat.pos = c(-27, 27, 135),
+        cat.dist = c(0.055, 0.055, 0.085),
+        cat.fontfamily = "sans",
+        rotation = 1
+)
+```
+
+
+## Heatmap
+```{r}
+library(pheatmap)
+
+read_xlsx('../data/Liver and pancreatic cancer markers summary.xlsx')
+liver_markers <- read_xlsx('../data/liver_markers.xlsx')
+pancreatic_markers <- read_xlsx('../data/pancreatic_markers.xlsx')
+
+liver_df_num = as.data.frame(liver_markers[,1:4])
+rownames(liver_df_num) <- liver_df_num[,1]
+liver_df_num <-liver_df_num[,2:4]
+liver_anno_data <- liver_markers %>% 
+  select(Literature,Specificity) %>% 
+  as.data.frame()
+
+rownames(liver_anno_data) <- liver_df_num[,1]
+rownames(liver_anno_data) <- rownames(liver_df_num)
+
+pheatmap(liver_df_num,main = "Liver Proteins",annotation_row = liver_anno_data)
+
+ml_liver_heat_df <- as.data.frame(ML_top_prots_HCC) %>% 
+  filter(term%in%liver_df_num$term)
+
+
+
+rownames(ml_liver_heat_df) <- ml_liver_heat_df$term
+#ml_liver_heat_df <- select(ml_liver_heat_df,scaled) %>% filter(scaled>0)
+MLlivheat <- pheatmap(ml_liver_heat_df,main = "Liver Proteins",annotation_row = liver_anno_data,cluster_rows = F,cluster_cols = F)
+
+ml_pan_heat_df <- as.data.frame(ML_top_prots_PAN)
+
+
+pdf('figures/liv_heat.pdf',width = 8)
+livheat <- pheatmap(liver_df_num,main = "Liver Proteins",annotation_row = liver_anno_data)
+dev.off()
+
+pancreas_df_num = as.data.frame(pancreatic_markers[,1:4])
+rownames(pancreas_df_num) <- pancreas_df_num[,1]
+pancreas_df_num <-pancreas_df_num[,2:4]
+pan_anno_data <- pancreatic_markers %>% 
+  select(Literature,Specificity) %>% 
+  as.data.frame()
+rownames(pan_anno_data) <- rownames(log10_pancreas_df_num_pvalues)
+
+pdf('figures/panc_heat.pdf',width = 8)
+panc_heat <- pheatmap(pancreas_df_num,main = "Pancreas Proteins",annotation_row = pan_anno_data)
+dev.off()
+
+pdf('figures/both_heat.pdf')
+livheat + panc_heat
+dev.off()
+ann_rows <-
+  auto_data_long %>% 
+  distinct(Disease) %>% 
+  mutate(x = Disease) %>% 
+  column_to_rownames("x")
+
+input_data %>% 
+  column_to_rownames("Disease") %>% 
+  pheatmap(show_rownames = T,
+           show_colnames = F,
+           annotation_row =  ann_rows) 
+```
+
+## heatmap by p value
+```{r}
+PAN_IGT_LIMMA_P_VALUES <- filter(PAN_IGT_Limma_0427$sig_genes, term %in% pancreatic_genes) %>% mutate(analysis = 'IGT')
+PAN_cancer_LIMMA_P_VALUES <- filter(PAN_cancer_Limma_0427$sig_genes, term %in% pancreatic_genes)%>% mutate(analysis = 'CANCER')
+
+PAN_LIMMA_P_VALUES <- rbind(PAN_IGT_LIMMA_P_VALUES,PAN_cancer_LIMMA_P_VALUES)
+
+pancreas_df_num <- rename(pancreas_df_num,term=Gene)
+
+pancreas_df_num_pvalues <- left_join(pancreas_df_num,PAN_LIMMA_P_VALUES,by = 'term') %>% 
+  select(term,`DE-healthy`,`DE-cancers`,adj.P.Val,analysis)
+
+pancreas_df_num_pvalues <- pivot_wider(pancreas_df_num_pvalues,names_from = analysis,values_from = adj.P.Val)
+pancreas_df_num_pvalues <- as.data.frame(pancreas_df_num_pvalues)
+rownames(pancreas_df_num_pvalues) <- pancreas_df_num_pvalues$term
+pancreas_df_num_pvalues <- pancreas_df_num_pvalues %>% 
+  select(IGT,CANCER)
+pancreas_df_num_pvalues <- rename(pancreas_df_num_pvalues,DE_Healthy=IGT)
+pancreas_df_num_pvalues <- rename(pancreas_df_num_pvalues,DE_Cancer=CANCER)
+
+   color=c("white",  inferno(n=200,direction=-1)[-1]),
+
+myBreaks <- c(seq(min(pancreas_df_num_pvalues$DE_Healthy), 0, length.out=ceiling(paletteLength/2) + 1), 
+              seq(max(pancreas_df_num_pvalues$DE_Healthy)/paletteLength, max(pancreas_df_num_pvalues$DE_Healthy), length.out=floor(paletteLength/2)))
+
+paletteLength <- 50
+myColor <- colorRampPalette(c("yellow", "white", "blue"))(paletteLength)
+
+log10_pancreas_df_num_pvalues <- mutate(pancreas_df_num_pvalues,DE_Healthy =-log10(DE_Healthy)) 
+log10_pancreas_df_num_pvalues <- mutate(log10_pancreas_df_num_pvalues,DE_Cancer =-log10(DE_Cancer)) 
+
+pan_heat <- pheatmap(log10_pancreas_df_num_pvalues,main = "Pancreatic Cancer Proteins",
+         annotation_row = pan_anno_data, 
+         color=c("white",  inferno(n=300,direction=-1)[-1]),
+                  annotation_colors = annoCol)
+
+ML_LIV_HEAT_10 <- ml_liver_heat_df %>% 
+  mutate(GLMnet= scaled) %>% 
+  select(GLMnet)
+mllivheat2 <- pheatmap(ML_LIV_HEAT_10,main = "Hepatocellular Carcinoma Proteins",
+         annotation_row = liver_anno_data, 
+         cluster_cols = F,
+         cluster_rows = F,
+         color=c(inferno(n=300,direction=-1)[-1]),
+                  annotation_colors = annoCol)
+
+
+,
+         annotation_colors = annoCol)
+
+annoCol<-list(Literature=c(No="orange", Yes="blue"))
+
+         ,annotation_colors = annocol)
+
+annocol <- wes_palette('BottleRocket1',12,type = 'continuous')
+
+pheatmap(pancreas_df_num_pvalues,main = "Pancrea Proteins",annotation_row = pan_anno_data, color=c("white",  inferno(n=200,direction=-1)[-1]),)
+
+pdf('figures/pan_heat_DE.pdf')
+pan_heat
+dev.off()
+
+pdf('figures/liver_heat_DE.pdf')
+livheat
+dev.off()
+```
+
+## pancreas heatmap
+```{r}
+pan_p_scores <- readxl::read_excel('panc_pvalues.xlsx')
+pan_p_scores <- as.data.frame(pan_p_scores)
+rownames(pan_p_scores) <- pan_p_scores$term
+
+pan_p_scores <- mutate(pan_p_scores,DE_Healthy=-log10(DE_Healthy))
+pan_p_scores <- mutate(pan_p_scores,DE_Cancer=-log10(DE_Cancer))
+pan_p_scores <- mutate(pan_p_scores,GLMnet=GLM)
+
+PAN_df_num_pvalues <- select(pan_p_scores,DE_Healthy,DE_Cancer)
+PAN_df_num_scores <- select(pan_p_scores,GLMnet)
+
+'livheatwhite <- pheatmap(LIVER_df_num_pvalues,main = "Hepatocellular Carcinoma Proteins",
+         annotation_row = liver_anno_data, 
+         cluster_rows = F,
+         color=c("white",  inferno(n=300,direction=-1)[-1]),
+         annotation_colors = annoCol)'
+
+panheatpval <- pheatmap(PAN_df_num_pvalues,main = "Pancreatic Cancer Proteins",
+         annotation_row = pan_anno_data, 
+         cluster_rows = F,
+         cluster_cols = F,
+         color=c("white",inferno(n=300,direction=-1)[-1]),
+         #annotation_colors = annoCol,
+         annotation_legend = T)
+panheatml <- pheatmap(PAN_df_num_scores,main = "Pancreatic Cancer Proteins",
+         annotation_row = pan_anno_data, 
+         cluster_cols = F,
+         cluster_rows = F,
+         color=c("white",inferno(n=300,direction=-1)[-1]),
+                  annotation_colors = annoCol)
+pancreatic_markers <- read_xlsx('../data/pancreatic_markers.xlsx')
+pancreatic_markers <- as.data.frame(pancreatic_markers)
+rownames(pancreatic_markers) <- pancreatic_markers$Gene
+
+pan_anno_data <- pancreatic_markers %>% 
+  select(Literature,Specificity,GLM) 
+
+rownames(pan_anno_data) <- rownames(log10_pancreas_df_num_pvalues)
+
+anno_pan_mL <- left_join(pan_anno_data,PAN_df_num_scores,by=rownames(pan_anno_data))
+
+p1_pan_de <- as.ggplot(panheatpval)
+p1_pan_ml <- as.ggplot(panheatml)
+p1_pan_de + p1_pan_ml + plot_layout(guides = 'collect')
+
+p1_liver_de+p1_liver_ml+  plot_layout(guides = "collect")
+p1 + p2 +  plot_layout(guides = "collect")
+
+
+
+
+
+
+```
+
+## heatmap p value liver 
+```{r}
+HCC_IGT_LIMMA_P_VALUES <- filter(HCC_IGT_Limma_0427$sig_genes, term %in% liver_genes) %>% mutate(analysis = 'IGT')
+HCC_cancer_LIMMA_P_VALUES <- filter(HCC_cancer_Limma_0427$sig_genes, term %in% liver_genes)%>% mutate(analysis = 'CANCER')
+
+liver_genes2 <-     c("CRIM1" , "AFP"  ,"IGFBP3" , "APOH"  ,  "NRCAM"  , "CNDP1"  , "CDH6"  ,  "APOM" ,   "FABP1"  , "ROBO1"  , "GDF15" ,  "SDC1"   ,
+ "AREG"  ,  "ACE2"  ,  "HGF" ,    "VCAM1"  , "LTA4H" ,  "SULT2A1" ,"AKR1C4" , "PROC" ,   "HNMT"  ,  "ENPP2"  , "MUC13" )
+
+HCC_LIMMA_P_VALUES <- rbind(HCC_IGT_LIMMA_P_VALUES,HCC_cancer_LIMMA_P_VALUES)
+liver_df_num <- mutate(liver_df_num,term=rownames(liver_df_num))
+liver_df_num <- rename(liver_df_num,term=Gene)
+
+LIVER_df_num_pvalues <- left_join(liver_df_num,HCC_LIMMA_P_VALUES,by = 'term') %>% 
+  select(term,`DE-healthy`,`DE-cancers`,adj.P.Val,analysis)
+
+LIVER_df_num_pvalues <- pivot_wider(LIVER_df_num_pvalues,names_from=analysis,values_from = adj.P.Val)
+LIVER_df_num_pvalues <- as.data.frame(LIVER_df_num_pvalues)
+rownames(LIVER_df_num_pvalues) <- LIVER_df_num_pvalues$term
+LIVER_df_num_pvalues <- LIVER_df_num_pvalues %>% 
+  select(IGT,CANCER)
+
+liver_combined_Scores <- readxl::read_excel('liver_pvals_impscore_combined.xlsx')
+liver_combined_Scores <- as.data.frame(liver_combined_Scores)
+rownames(liver_combined_Scores) <- liver_combined_Scores$term
+
+liver_combined_Scores <- mutate(liver_combined_Scores,DE_Healthy=-log10(IGT))
+liver_combined_Scores <- mutate(liver_combined_Scores,DE_Cancer=-log10(CANCER))
+
+LIVER_df_num_pvalues <- select(liver_combined_Scores,DE_Healthy,DE_Cancer)
+LIVER_df_num_scores <- select(liver_combined_Scores,GLMnet)
+
+'livheatwhite <- pheatmap(LIVER_df_num_pvalues,main = "Hepatocellular Carcinoma Proteins",
+         annotation_row = liver_anno_data, 
+         cluster_rows = F,
+         color=c("white",  inferno(n=300,direction=-1)[-1]),
+         annotation_colors = annoCol)'
+
+livheat <- pheatmap(LIVER_df_num_pvalues,main = "Hepatocellular Carcinoma Proteins",
+         annotation_row = liver_anno_data, 
+         cluster_rows = F,
+         color=c(inferno(n=300,direction=-1)[-1]),
+         annotation_colors = annoCol)
+mllivheat2 <- pheatmap(LIVER_df_num_scores,main = "Hepatocellular Carcinoma Proteins",
+         annotation_row = liver_anno_data, 
+         cluster_cols = F,
+         cluster_rows = F,
+         color=c("white",inferno(n=300,direction=-1)[-1]),
+                  annotation_colors = annoCol)
+
+p1_liver_de <- as.ggplot(livheat)
+p1_liver_ml <- as.ggplot(mllivheat2)
+
+p1_liver_de+p1_liver_ml
+
+LIVER_df_num_pvalues <= 
+   color=c("white",  inferno(n=200,direction=-1)[-1]),
+
+myBreaks <- c(seq(min(pancreas_df_num_pvalues$DE_Healthy), 0, length.out=ceiling(paletteLength/2) + 1), 
+              seq(max(pancreas_df_num_pvalues$DE_Healthy)/paletteLength, max(pancreas_df_num_pvalues$DE_Healthy), length.out=floor(paletteLength/2)))
+
+paletteLength <- 50
+myColor <- colorRampPalette(c("yellow", "white", "blue"))(paletteLength)
+
+log10_pancreas_df_num_pvalues <- mutate(pancreas_df_num_pvalues,DE_Healthy =-log10(DE_Healthy)) 
+log10_pancreas_df_num_pvalues <- mutate(log10_pancreas_df_num_pvalues,DE_Cancer =-log10(DE_Cancer)) 
+
+pheatmap(log10_pancreas_df_num_pvalues,main = "Pancreas Proteins",
+         annotation_row = pan_anno_data, 
+         color=c("white",  inferno(n=300,direction=-1)[-1]),
+         annotation_colors = annoCol)
+
+annoCol<-list(Literature=c(No="turquoise", Yes="orange"))
+
+         ,annotation_colors = annocol)
+
+annocol <- wes_palette('BottleRocket1',12,type = 'continuous')
+
+pheatmap(pancreas_df_num_pvalues,main = "Pancreas Proteins",annotation_row = pan_anno_data, color=c("white",  inferno(n=200,direction=-1)[-1]),)
+
+```
+
+
+## boxplots all cancers
+```{r}
+for (cancer in cancer_levels){
+  res <- multiclass_0427$variable_importance[[as.character(cancer)]] 
+    mutate(Cancer = cancer) %>% 
+    mutate(absval_estimate = abs(estimate)) %>% 
+    mutate(scaled = rescale(absval_estimate,to=c(0,100)))
+  res <- filter(res,!estimate == 0)
+  nam <- paste('ML_top_prots_', cancer, sep = "")
+  assign(nam,res)
+}
+ML_top_prots_HCC <- ML_top_prots_HCC %>% 
+  mutate(absval_estimate = abs(estimate)) %>% 
+  mutate(scaled = rescale(absval_estimate,to=c(0,100)))
+
+ML_top_prots_PAN <- ML_top_prots_PAN %>% 
+  mutate(absval_estimate = abs(estimate)) %>% 
+  mutate(scaled = rescale(absval_estimate,to=c(0,100)))
+
+ML_top_prots_PAN <- ML_top_prots_PAN %>% 
+filter(estimate!=0)
+plot_top_prots_ML <- function(top_prots,cancer){
+  filt_combined %>% 
+    mutate(Groups = case_when(Disease == cancer ~ as.character(cancer),
+                              Disease == 'Healthy' ~ 'Healthy',
+                              Disease %in% c("AML","CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer')) %>% 
+    filter(Assay %in% top_prots$term) %>% 
+    mutate(Assay = factor(Assay, levels = top_prots$term)) %>% 
+    mutate(Disease = factor(Disease, levels = c(cancer_levels, "Healthy"))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle(paste(cancer))
+}
+
+pdf('figures/ML_cancer_boxplots/AML.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_AML,'AML') + ggtitle('Acute Myeloid Leukemia')
+dev.off()
+pdf('figures/ML_cancer_boxplots/CLL.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_CLL,'CLL')+ ggtitle('Chronic Lymphocytic Leukemia')
+dev.off()
+pdf('figures/ML_cancer_boxplots/LYMPH.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_LYMPH,'LYMPH')+ ggtitle('Diffuse Large B-cell Lymphoma')
+dev.off()
+pdf('figures/ML_cancer_boxplots/MYEL.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_MYEL,'MYEL')+ ggtitle('Myeloma')
+dev.off()
+pdf('figures/ML_cancer_boxplots/CRC.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_CRC,'CRC')+ ggtitle('Colorectal Cancer')
+dev.off()
+pdf('figures/ML_cancer_boxplots/LUNGC.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_LUNGC,'LUNGC')+ ggtitle('Lung Cancer')
+dev.off()
+pdf('figures/ML_cancer_boxplots/GLIOM.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_GLIOM,'GLIOM')+ ggtitle('Glioma')
+dev.off()
+pdf('figures/ML_cancer_boxplots/BRC.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_BRC,'BRC')+ ggtitle('Breast Cancer')
+dev.off()
+pdf('figures/ML_cancer_boxplots/CVX.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_CVX,'CVX')+ ggtitle('Cervical Cancer')
+dev.off()
+pdf('figures/ML_cancer_boxplots/ENDC.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_ENDC,'ENDC')+ ggtitle('Endometrial Cancer')
+dev.off()
+pdf('figures/ML_cancer_boxplots/OVC.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_OVC,'OVC')+ ggtitle('Ovarian Cancer')
+dev.off()
+pdf('figures/ML_cancer_boxplots/PRC.pdf',width = 14)
+plot_top_prots_ML(ML_top_prots_PRC,'PRC')+ ggtitle('Prostate Cancer')
+dev.off()
+
+
+```
+
+```{r}
+  filt_combined %>% 
+    mutate(Groups = case_when(Disease == 'AML' ~ 'AML',
+                              Disease == 'Healthy' ~ 'Healthy',
+                              Disease %in% c("CLL","LYMPH","MYEL","CRC",'HCC',"LUNGC","GLIOM","BRC","CVX","ENDC","OVC","PRC","MEL","PAN") ~ 'All Cancer') %>% 
+    filter(Assay %in% ML_top_prots_AML$term)) %>% 
+    mutate(Assay = factor(Assay, levels = ML_top_prots_AML$term)) %>% 
+    mutate(Disease = factor(Disease, levels = c(cancer_levels, "Healthy"))) %>% 
+    ggplot(aes(Disease,NPX,fill = Groups))+ 
+    geom_boxplot(outlier.size = 0.5)+
+    facet_wrap(~Assay, nrow = 2, scales = "free_y")+
+    theme_bw() +theme(axis.text.x = element_text(angle = 90))+
+    theme_HPA+
+    ggtitle(paste(cancer))
+```
+

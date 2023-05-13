@@ -1,0 +1,233 @@
+---
+title: "Data QC"
+output: html_document
+date: "2023-04-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+## Read in Data
+```{r,echo=FALSE}
+cancer_data <- read_tsv("../data/230403.cancer.liver.data.tsv",show_col_types = F)
+UCAN_metadata <-   readRDS("../data/ucan_metadata_0302.rds")
+manifest <- read_xlsx('../data/sample_manifest.xlsx')
+IGT_data <- read_tsv("../data/20230411.cad.ngt.olink.tsv",show_col_types = F)
+IGT_metadata <-   read_tsv("../data/20230411.cad.ngt.metadata.tsv",show_col_types = F)
+
+pan_meta <- filter(manifest,Diagnose == 'pancreas cancer')
+
+c1_prots <- readLines("../data/cluster1.proteins.all.diseases.txt")
+
+patients_exclude <- read_excel("../data/patients_to_check_info.xlsx")
+patients_check <- read_excel("../data/patients_to_change_PH.xlsx")
+DA_UCAN_0505 <- read_excel("../data/DiseaseAtlas-UCAN_1_oklara fall_MBA.xlsx")
+DA_UCAN_0505 <- filter(DA_UCAN_0505,Include_JK_0505 == 'Yes')
+DA_UCAN_0505_include <- as.character(DA_UCAN_0505$VialNR)
+```
+
+## combine meta and protein data, reorder columns and exclude samples based on pathologists advice
+```{r}
+UCAN_metadata <- rename(UCAN_metadata,SampleID_Original = Sample) 
+UCAN_metadata <- left_join(UCAN_metadata,cancer_data,by = "SampleID_Original",multiple = "all") %>% 
+  select(DAid,SampleID, GROUP,Age.x,Sex,BMI.x,Stage,Grade)
+
+UCAN_metadata <- UCAN_metadata %>% mutate(Sex=case_when(Sex == 'Male' ~ "MALE", 
+                                                        Sex == 'Female' ~ "FEMALE"))
+UCAN_metadata <- select(UCAN_metadata,DAid,Sex,Age.x,BMI.x,GROUP,Stage,Grade) %>% 
+  rename(Age = Age.x,BMI = BMI.x) 
+UCAN_metadata <- UCAN_metadata %>% distinct(DAid,Sex,Age,BMI,GROUP,Stage,Grade,.keep_all = TRUE)
+
+exclude <- filter(patients_check,Exclude=='Yes')
+exclusion_samples <- c(patients_exclude$Sample,exclude$Sample)
+
+cancer_levels <- c('AML','CLL','LYMPH','MYEL','CRC','LUNGC','GLIOM','BRC', 'CVX','ENDC','OVC','PRC','HCC','PAN')
+```
+
+## Remove samples: 1) QC fail 2) duplicate assay 3) assay in cluster 1 
+```{r}
+  ### Remove all samples with warnings
+  data_NPX_cohort_no_warn<-
+    cancer_data %>%
+    filter(QC_Warning!="WARN")
+  
+  ##### Look at 3 replicated proteins and only keep one of the replicated Assays
+  replicate.protein.rem.OlinkID <-
+    data_NPX_cohort_no_warn %>%
+    group_by(OlinkID, Assay) %>%
+    summarise(mean_NPX = mean(NPX, na.rm = T)) %>%
+    group_by(Assay) %>%
+    mutate(n_pro = n_distinct(OlinkID)) %>%
+    filter(n_pro > 1) %>%
+    group_by(Assay) %>%
+    mutate(keep_pro = max(mean_NPX)) %>%
+    mutate(remv_pro = ifelse(mean_NPX == keep_pro, 'no','yes')) %>%
+    filter(remv_pro == 'yes') %>%
+    pull(OlinkID)
+  
+  #Remove all replicated assays except one each
+  data_NPX_cohort_no_warn_rem_rep<-
+    data_NPX_cohort_no_warn %>%
+    filter(!OlinkID %in% replicate.protein.rem.OlinkID)
+  
+  #exclude the sample IDs in exclusion samples
+  data_NPX_cohort_no_warn_rem_rep <- 
+    data_NPX_cohort_no_warn_rem_rep %>% 
+    filter(!SampleID_Original %in% exclusion_samples)
+  
+  ##
+  data_NPX_cohort_no_warn_rem_rep <- filter(data_NPX_cohort_no_warn_rem_rep,!Assay %in% c1_prots)
+
+  
+  
+```
+
+## Recode disease name and only keep batch 1 &3
+```{r}
+filtered_data <- data_NPX_cohort_no_warn_rem_rep %>%
+    filter(QC_Warning=='PASS') %>%
+    mutate(Disease = recode(Disease, 'Hepatocellular cancer' = 'HCC', 'Pancreatic cancer' = 'PAN','Melanoma' = 'MEL'))
+  
+  #only keep data in batches 1 or 3
+  keep_batches <- c('B1','B3')
+  filtered_data <- filtered_data %>% 
+    filter(BatchID %in% keep_batches)
+  
+  filtered_data <- filtered_data %>%
+    filter(Disease %in% cancer_levels)
+  
+  filt_cancer <- select(filtered_data,Index,OlinkID, Assay, Panel, QC_Warning,NPX,BatchID,DAid,Class,Disease,Age,Gender,BMI)
+  filt_cancer <- filt_cancer %>%
+    rename(RunID = BatchID)
+  filt_cancer <- filt_cancer %>%
+    rename(Sex = Gender)
+  
+  filt_cancer <- filt_cancer %>%
+    mutate(Sex = if_else(Sex == 1,'MALE','FEMALE'))
+```
+
+##  QC IGT data
+```{r}
+filt_IGT_meta <- filter(IGT_metadata,Myocardial_infarction==0,Atrial_fibrillation==0,Stroke==0,COPD==0,Asthma==0,Coronary_artery_interv==0)
+  
+  IGT_data_NPX_cohort_no_warn<-
+    IGT_data %>%
+    filter(QC_Warning!="WARN")
+  
+  ##### Look at 3 replicated proteins and only keep one of the replicated Assays
+  replicate.protein.rem.OlinkID.IGT <-
+    IGT_data_NPX_cohort_no_warn %>%
+    group_by(OlinkID, Assay) %>%
+    summarise(mean_NPX = mean(NPX, na.rm = T)) %>%
+    group_by(Assay) %>%
+    mutate(n_pro = n_distinct(OlinkID)) %>%
+    filter(n_pro > 1) %>%
+    group_by(Assay) %>%
+    mutate(keep_pro = max(mean_NPX)) %>%
+    mutate(remv_pro = ifelse(mean_NPX == keep_pro, 'no','yes')) %>%
+    filter(remv_pro == 'yes') %>%
+    pull(OlinkID)
+  
+  #Remove all replicated assays except one each
+  IGT_NPX_cohort_no_warn_rem_rep<-
+    IGT_data_NPX_cohort_no_warn %>%
+    filter(!OlinkID %in% replicate.protein.rem.OlinkID.IGT)
+  
+  replicate.assay<-unique(filter(IGT_data_NPX_cohort_no_warn, OlinkID %in% replicate.protein.rem.OlinkID.IGT)$Assay)
+  
+  IGT_NPX_cohort_no_warn_rem_rep <- filter(IGT_NPX_cohort_no_warn_rem_rep,!Assay %in% c1_prots)
+  
+  IGT_temp <- IGT_NPX_cohort_no_warn_rem_rep %>%
+    filter(QC_Warning == 'PASS')
+  
+  IGT_temp <-   left_join(IGT_temp,filt_IGT_meta,by = 'DAid')
+  
+  
+  filt_IGT <- IGT_temp %>%
+    select(Index,OlinkID, Assay, Panel,QC_Warning,NPX,PlateID,DAid,Sex,Age,BMI)
+  
+  filt_IGT <- mutate(filt_IGT,Disease = 'Healthy')
+  filt_IGT <- mutate(filt_IGT,Class = 'Control')
+  
+  filt_IGT <- filt_IGT %>%
+    rename(RunID = PlateID)
+  
+  filt_IGT <- relocate(filt_IGT,Age,.after = Class)
+  filt_IGT <- relocate(filt_IGT,BMI,.after = Sex)
+  filt_IGT <- relocate(filt_IGT,Disease,.after = Class)
+  
+  IGT_metadata <- select(IGT_metadata,DAid,Sex,Age,BMI) %>% 
+  mutate(GROUP = 'IGT',Stage='NA',Grade='NA') 
+
+```
+
+## Combine healthy and cancer data
+```{r}
+filt_combined <- rbind(filt_cancer,filt_IGT)
+```
+
+## QC liver data
+```{r}
+# 0 is male, 1 is female 
+
+liver_levels <- c('Viral hepatitis related cirrhosis','Liver healthy','Chronic Liver Disease (CLD)','Fatty Liver Disease')
+
+ ### Remove all samples with warnings
+  data_NPX_cohort_no_warn<-
+    cancer_data %>%
+    filter(QC_Warning!="WARN")
+  
+  ##### Look at 3 replicated proteins and only keep one of the replicated Assays
+  replicate.protein.rem.OlinkID <-
+    data_NPX_cohort_no_warn %>%
+    group_by(OlinkID, Assay) %>%
+    summarise(mean_NPX = mean(NPX, na.rm = T)) %>%
+    group_by(Assay) %>%
+    mutate(n_pro = n_distinct(OlinkID)) %>%
+    filter(n_pro > 1) %>%
+    group_by(Assay) %>%
+    mutate(keep_pro = max(mean_NPX)) %>%
+    mutate(remv_pro = ifelse(mean_NPX == keep_pro, 'no','yes')) %>%
+    filter(remv_pro == 'yes') %>%
+    pull(OlinkID)
+  
+  #Remove all replicated assays except one each
+  data_NPX_cohort_no_warn_rem_rep<-
+    data_NPX_cohort_no_warn %>%
+    filter(!OlinkID %in% replicate.protein.rem.OlinkID)
+  
+  #exclude the sample IDs in exclusion samples
+  data_NPX_cohort_no_warn_rem_rep <- 
+    data_NPX_cohort_no_warn_rem_rep %>% 
+    filter(!SampleID_Original %in% exclusion_samples)
+  
+  ##
+  data_NPX_cohort_no_warn_rem_rep <- filter(data_NPX_cohort_no_warn_rem_rep,!Assay %in% c1_prots)
+
+  filt_liver <- data_NPX_cohort_no_warn_rem_rep %>%
+    filter(QC_Warning == 'PASS')
+  
+  filt_liver <- filter(filt_liver,Disease%in% liver_levels)
+  filt_liver <- rename(filt_liver, Sex = Gender)
+  
+  filt_liver <- filt_liver %>%
+    mutate(Sex = if_else(Sex == 0,'MALE','FEMALE'))
+  
+  filt_liver <- filt_liver %>%
+    select(Index,OlinkID, Assay, Panel,QC_Warning,NPX,PlateID,DAid,Class,Disease,Sex,Age,BMI,BatchID)
+  
+  filt_liver <- filt_liver %>%
+    rename(RunID = PlateID)
+  
+  filt_liver <- relocate(filt_liver,Sex,.after = Age)
+
+  
+```
+
