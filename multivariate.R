@@ -1,8 +1,6 @@
 ### multivariate prediction model ###
 library(tidymodels)
 
-##NOTE TO JOSEFIN: DECIDED TO RUN WITHOUT HEALTHY AS CONTROL 
-
 cancer_levels <- c('AML','CLL','LYMPH','MYEL','CRC','LUNGC','GLIOM','BRC', 'CVX','ENDC','OVC','PRC','HCC','PAN')
 run_tidy_multiclass_lasso <- function(train_data,test_data){
   set.seed(222)
